@@ -31,13 +31,6 @@ populi/
     └── build.yaml     # Build + push + update image tags
 ```
 
-## CI/CD flow
-
-1. Push to `main`
-2. GitHub Actions builds both images, pushes to ghcr.io with the short SHA as tag
-3. Action commits the updated tag back to `k8s/overlays/dev/kustomization.yaml`
-4. ArgoCD detects the change and syncs
-
 ## Deploy to cluster
 
 Drop `k8s/argocd-app.yaml` into `k8s-gitops/apps/` and ArgoCD picks it up.
