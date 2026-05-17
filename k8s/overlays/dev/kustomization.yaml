@@ -9,6 +9,6 @@ resources:
 # Image tags are updated automatically by GitHub Actions on each push to main
 images:
   - name: ghcr.io/yoramvandevelde/populi-frontend
-    newTag: latest # frontend
+    newTag: 08e016c3 # frontend
   - name: ghcr.io/yoramvandevelde/populi-backend
-    newTag: latest # backend
+    newTag: 08e016c3 # backend
