@@ -8,7 +8,7 @@ RUN dotnet publish Populi/Populi.csproj -c Release -o /app/publish
 
 # Stage 2: runtime (non-root)
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine
-RUN addgroup -S app && adduser -S app -G app
+#RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
 COPY --from=build /app/publish .
 RUN chown -R app:app /app
