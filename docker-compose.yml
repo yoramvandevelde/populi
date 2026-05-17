@@ -1,0 +1,24 @@
+services:
+  populi-backend-svc:
+    build: ./backend
+    environment:
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
+      - DATABASE_PATH=/data/recepten.db
+      - ASPNETCORE_URLS=http://+:5000
+      - HA_URL=${HA_URL:-}
+      - HA_TOKEN=${HA_TOKEN:-}
+    volumes:
+      - db-data:/data
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - populi-backend-svc
+    restart: unless-stopped
+
+volumes:
+  db-data:

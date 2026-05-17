@@ -1,61 +1,55 @@
-import { useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { api } from './api';
+import Login from './pages/Login';
+import Home from './pages/Home';
+import ViewRecipe from './pages/ViewRecipe';
+import EditRecipe from './pages/EditRecipe';
+import CookMode from './pages/CookMode';
+import Admin from './pages/Admin';
 
-const API = "/api";
+const AuthContext = createContext(null);
+export const useAuth = () => useContext(AuthContext);
 
-export default function App() {
-  const [items, setItems] = useState([]);
-  const [input, setInput] = useState("");
-  const [error, setError] = useState(null);
+function AuthProvider({ children }) {
+  const [user, setUser] = useState(undefined);
 
-  async function fetchItems() {
-    try {
-      const res = await fetch(`${API}/items`);
-      setItems(await res.json());
-    } catch (e) {
-      setError("Could not reach backend.");
-    }
-  }
+  useEffect(() => {
+    api.me()
+      .then(r => r.ok ? r.json() : null)
+      .then(data => setUser(data?.username ?? null))
+      .catch(() => setUser(null));
+  }, []);
 
-  async function addItem() {
-    if (!input.trim()) return;
-    await fetch(`${API}/items`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: input }),
-    });
-    setInput("");
-    fetchItems();
-  }
-
-  async function deleteItem(id) {
-    await fetch(`${API}/items/${id}`, { method: "DELETE" });
-    fetchItems();
-  }
-
-  useEffect(() => { fetchItems(); }, []);
+  if (user === undefined) return null;
 
   return (
-    <div style={{ maxWidth: 480, margin: "60px auto", fontFamily: "sans-serif" }}>
-      <h1>Populi</h1>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addItem()}
-          placeholder="Add item..."
-          style={{ flex: 1, padding: "6px 10px" }}
-        />
-        <button onClick={addItem}>Add</button>
-      </div>
-      <ul style={{ listStyle: "none", padding: 0 }}>
-        {items.map((item) => (
-          <li key={item.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #eee" }}>
-            <span>{item.name}</span>
-            <button onClick={() => deleteItem(item.id)}>×</button>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <AuthContext.Provider value={{ user, setUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+function Protected({ children }) {
+  const { user } = useAuth();
+  return user ? children : <Navigate to="/login" replace />;
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Protected><Home /></Protected>} />
+          <Route path="/recipes/new" element={<Protected><EditRecipe /></Protected>} />
+          <Route path="/recipes/:id" element={<Protected><ViewRecipe /></Protected>} />
+          <Route path="/recipes/:id/edit" element={<Protected><EditRecipe /></Protected>} />
+          <Route path="/recipes/:id/cook" element={<Protected><CookMode /></Protected>} />
+          <Route path="/admin" element={<Protected><Admin /></Protected>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }

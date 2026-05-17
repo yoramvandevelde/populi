@@ -11,7 +11,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine
 #RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
 COPY --from=build /app/publish .
-RUN chown -R app:app /app
+RUN mkdir -p /data && chown -R app:app /app /data
 USER app
 EXPOSE 5000
 ENV ASPNETCORE_URLS=http://+:5000
