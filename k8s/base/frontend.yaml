@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: populi-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: populi-frontend
+  template:
+    metadata:
+      labels:
+        app: populi-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/yoramvandevelde/populi-frontend
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101  # nginx user
+            runAsGroup: 101
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false  # nginx needs to write temp files
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: populi-frontend-svc
+spec:
+  selector:
+    app: populi-frontend
+  ports:
+    - port: 80
+      targetPort: 8080

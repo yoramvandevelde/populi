@@ -1,0 +1,79 @@
+# Default deny all traffic in the namespace
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  endpointSelector: {}
+  ingress:
+    - {}
+  egress:
+    - {}
+---
+# Frontend: ingress from ingress-nginx, egress to backend and kube-dns
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: populi-frontend
+spec:
+  endpointSelector:
+    matchLabels:
+      app: populi-frontend
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: ingress-nginx
+            io.kubernetes.pod.namespace: ingress-nginx
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            app: populi-backend
+            io.kubernetes.pod.namespace: populi
+      toPorts:
+        - ports:
+            - port: "5000"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s-app: kube-dns
+            io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+---
+# Backend: ingress only from frontend, egress to kube-apiserver
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: populi-backend
+spec:
+  endpointSelector:
+    matchLabels:
+      app: populi-backend
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: populi-frontend
+            io.kubernetes.pod.namespace: populi
+      toPorts:
+        - ports:
+            - port: "5000"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s-app: kube-dns
+            io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
